@@ -11,9 +11,9 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -37,16 +37,27 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 		DefaultDependencyHandler dependencies = (DefaultDependencyHandler) rootProject.getDependencies();
 
 		return new DefaultDependenciesModel(
-				"ProjectToPluginMap::\n" + printMap(projectToPluginMap) + "\n\n", projectToPluginMapOutput
-
+				"ProjectToPluginMap::\n" + printMap(projectToPluginMap) + "\n\n",
+				projectToPluginMapOutput
 		);
 	}
 
 	private @NotNull Map<Project, Set<String>> getProjectToPluginMapping(Project rootProject) {
-		Set<String> allAvailablePlugins = rootProject.getAllprojects().stream().map(this::getPluginsForProject).flatMap(Collection::stream).collect(Collectors.toSet());
+		Set<File> pluginJars = rootProject.getAllprojects().stream()
+				.map(Project::getPlugins)
+				.flatMap(it -> pluginJarLocation(it).stream())
+				.collect(Collectors.toSet());
 
-		List<String> pluginNames = allAvailablePlugins.stream().map(it -> it.replace("META-INF/gradle-plugins/", "").replaceAll(".properties$", "")).toList();
+		// not sure - can plugins have conflicting names ?
+		// if yes then might need to update to handle that
+		Set<String> allAvailablePlugins = pluginJars.stream()
+				.map(this::readGradlePluginFromJar)
+				.flatMap(Collection::stream)
+				.collect(Collectors.toSet());
 
+		Set<String> pluginNames = allAvailablePlugins.stream()
+				.map(it -> it.replace("META-INF/gradle-plugins/", "").replaceAll(".properties$", ""))
+				.collect(Collectors.toSet());
 
 		Map<Project, Set<String>> projectToPluginMap = new HashMap<>();
 		for (Project project : rootProject.getAllprojects()) {
@@ -69,24 +80,15 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 		return projectToPluginMap;
 	}
 
-	private @NotNull Collection<String> getPluginsForProject(Project project) {
-		// get all plugin jar files
-		Set<File> jars = project.getPlugins()
-				.stream().map(this::getJarFile).filter(Objects::nonNull)
+	Collection<File> pluginJarLocation(PluginContainer pluginsContainer) {
+		return pluginsContainer.stream()
+				.flatMap(it -> getJarFile(it).stream())
 				.collect(Collectors.toSet());
-
-		return getPluginNamesInsideProject(jars);
 	}
 
-	private static Set<String> getPluginNamesInsideProject(Set<File> jars) {
+	private Set<String> readGradlePluginFromJar(File jarFile) {
 		Set<String> pluginFilePath = new HashSet<>();
-		for (File jarFile : jars) {
-			final JarFile jar;
-			try {
-				jar = new JarFile(jarFile);
-			} catch (IOException e) {
-				throw new RuntimeException("Could not read JarFile", e);
-			}
+		try (JarFile jar = new JarFile(jarFile)) {
 			final Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
 			while (entries.hasMoreElements()) {
 				JarEntry jarEntry = entries.nextElement();
@@ -95,21 +97,18 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 					pluginFilePath.add(name);
 				}
 			}
-			try {
-				jar.close();
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+		} catch (IOException e) {
+			throw new RuntimeException("Could not process JarFile", e);
 		}
 		return pluginFilePath;
 	}
 
-	private File getJarFile(Plugin plugin) {
+	private Optional<File> getJarFile(Plugin plugin) {
 		final File jarFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
 		if (jarFile.isFile()) {  // Run with JAR file
-			return jarFile;
+			return Optional.of(jarFile);
 		}
-		return null;
+		return Optional.empty();
 	}
 
 	String printMap(Map<Project, Set<String>> map) {
