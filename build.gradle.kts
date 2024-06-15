@@ -1,5 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.23"
+    java
+    `java-gradle-plugin`
 }
 
 group = "org.example"
@@ -11,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.gradle:gradle-tooling-api:7.3.3")
+    implementation("org.gradle:gradle-tooling-api:8.5")
     // The tooling API need an SLF4J implementation available at runtime, replace this with any other implementation
     runtimeOnly("org.slf4j:slf4j-simple:1.7.10")
 
