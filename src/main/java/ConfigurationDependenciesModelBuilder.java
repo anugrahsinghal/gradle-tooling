@@ -1,15 +1,12 @@
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.internal.plugins.DefaultPluginManager;
-import org.gradle.api.internal.plugins.PluginImplementation;
-import org.gradle.api.plugins.HelpTasksPlugin;
+import org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -46,7 +43,7 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 	}
 
 	private @NotNull Map<Project, Set<String>> getProjectToPluginMapping(Project rootProject) {
-		List<String> allAvailablePlugins = rootProject.getAllprojects().stream().map(this::getPluginsForProject).flatMap(Collection::stream).toList();
+		Set<String> allAvailablePlugins = rootProject.getAllprojects().stream().map(this::getPluginsForProject).flatMap(Collection::stream).collect(Collectors.toSet());
 
 		List<String> pluginNames = allAvailablePlugins.stream().map(it -> it.replace("META-INF/gradle-plugins/", "").replaceAll(".properties$", "")).toList();
 
@@ -72,26 +69,30 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 		return projectToPluginMap;
 	}
 
-	private @NotNull List<String> getPluginsForProject(Project project) {
-		return project.getPlugins().stream().map(this::getPluginNamesInsideProject).flatMap(Collection::stream).toList();
+	private @NotNull Collection<String> getPluginsForProject(Project project) {
+		// get all plugin jar files
+		Set<File> jars = project.getPlugins()
+				.stream().map(this::getJarFile).filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+
+		return getPluginNamesInsideProject(jars);
 	}
 
-	private @NotNull List<String> getPluginNamesInsideProject(Plugin plugin) {
-		List<String> idk = new ArrayList<>();
-		final File jarFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-		if (jarFile.isFile()) {  // Run with JAR file
+	private static Set<String> getPluginNamesInsideProject(Set<File> jars) {
+		Set<String> pluginFilePath = new HashSet<>();
+		for (File jarFile : jars) {
 			final JarFile jar;
 			try {
 				jar = new JarFile(jarFile);
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				throw new RuntimeException("Could not read JarFile", e);
 			}
 			final Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
 			while (entries.hasMoreElements()) {
 				JarEntry jarEntry = entries.nextElement();
 				final String name = jarEntry.getName();
 				if (name.contains("META-INF/gradle-plugins/") && name.endsWith(".properties")) {
-					idk.add(name);
+					pluginFilePath.add(name);
 				}
 			}
 			try {
@@ -99,10 +100,16 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		} else {
-			idk.add("IDKDKDKDK" + plugin.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
 		}
-		return idk;
+		return pluginFilePath;
+	}
+
+	private File getJarFile(Plugin plugin) {
+		final File jarFile = new File(plugin.getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+		if (jarFile.isFile()) {  // Run with JAR file
+			return jarFile;
+		}
+		return null;
 	}
 
 	String printMap(Map<Project, Set<String>> map) {
