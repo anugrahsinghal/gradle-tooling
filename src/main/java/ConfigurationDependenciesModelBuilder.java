@@ -30,29 +30,16 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 
 	@Override
 	public Object buildAll(String modelName, Project rootProject) {
-		DefaultPluginManager pluginManager = (DefaultPluginManager) rootProject.getPluginManager();
+		// todo: include in the CustomModel
+		Map<Project, Set<String>> projectToPluginMap = getProjectToPluginMapping(rootProject);
 
-		PluginContainer plugins = pluginManager.getPluginContainer();
+		return new DefaultDependenciesModel(
+						"ProjectToPluginMap::\n" + printMap(projectToPluginMap) + "\n\n"
 
-//        Enumeration<URL> manifests = getClass().getClassLoader().getR
+		);
+	}
 
-
-		Set<String> names = rootProject.getAllprojects().stream()
-				.flatMap(p -> p.getPlugins().stream()).map(it -> it.getClass().getTypeName() + "__" + it.getClass().getGenericSuperclass().getTypeName())
-				.collect(Collectors.toSet());
-
-//        List<DefaultPluginContainer> defaultPluginContainers = project.getPlugins().stream().map(DefaultPluginContainer.class::cast).toList();
-
-		List<Object> pluginImplementations = rootProject.getPlugins().stream().map(obj -> {
-			try {
-				return (PluginImplementation) obj;
-			} catch (Exception e) {
-				return obj.getClass().getTypeName();
-			}
-		}).toList();
-
-
-		Plugin helpTasksPlugin = plugins.findPlugin(HelpTasksPlugin.class);
+	private @NotNull Map<Project, Set<String>> getProjectToPluginMapping(Project rootProject) {
 		List<String> allAvailablePlugins = rootProject.getAllprojects().stream().map(this::getPluginsForProject).flatMap(Collection::stream).toList();
 
 		List<String> pluginNames = allAvailablePlugins.stream().map(it -> it.replace("META-INF/gradle-plugins/", "").replaceAll(".properties$", "")).toList();
@@ -76,18 +63,7 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 
 			projectToPluginMap.computeIfAbsent(project, k -> new HashSet<>()).addAll(actualPlugins);
 		}
-
-		return new DefaultDependenciesModel(
-				"NAMES:: ->\n" + String.join("\n\n", names) + "\n" +
-						"IMPL:: ->\n" + pluginImplementations + "\n" +
-						"HELP_IDK\n" + printMap(projectToPluginMap) + "\n\n"
-
-		);
-	}
-
-	String printMap(Map<Project, Set<String>> map) {
-		String s = map.entrySet().stream().map(e -> e.getKey().getName()).collect(Collectors.joining("\n"));
-		return map.entrySet().stream().map(e ->  e.getKey().getName() + "::\n" + String.join("\n", e.getValue())).collect(Collectors.joining("\n\n"));
+		return projectToPluginMap;
 	}
 
 	private @NotNull List<String> getPluginsForProject(Project project) {
@@ -123,32 +99,9 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 		return idk;
 	}
 
-	void hey() throws Exception {
-		final String path = "sample/folder";
-		final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-
-		if (jarFile.isFile()) {  // Run with JAR file
-			final JarFile jar = new JarFile(jarFile);
-			final Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
-			while (entries.hasMoreElements()) {
-				final String name = entries.nextElement().getName();
-				if (name.startsWith(path + "/")) { //filter according to the path
-					System.out.println(name);
-				}
-			}
-			jar.close();
-		} else { // Run with IDE
-//            final URL url = Launcher.class.getResource("/" + path);
-//            if (url != null) {
-//                try {
-//                    final File apps = new File(url.toURI());
-//                    for (File app : apps.listFiles()) {
-//                        System.out.println(app);
-//                    }
-//                } catch (URISyntaxException ex) {
-//                    // never happens
-//                }
-//            }
-		}
+	String printMap(Map<Project, Set<String>> map) {
+		String s = map.entrySet().stream().map(e -> e.getKey().getName()).collect(Collectors.joining("\n"));
+		return map.entrySet().stream().map(e ->  e.getKey().getName() + "::\n" + String.join("\n", e.getValue())).collect(Collectors.joining("\n\n"));
 	}
+
 }
