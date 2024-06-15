@@ -32,9 +32,15 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 	public Object buildAll(String modelName, Project rootProject) {
 		// todo: include in the CustomModel
 		Map<Project, Set<String>> projectToPluginMap = getProjectToPluginMapping(rootProject);
+		Map<String, Set<String>> projectToPluginMapOutput = new HashMap<>();
+		projectToPluginMap.forEach((project, plugins) -> projectToPluginMapOutput.put(project.getName(), plugins));
+
+		// Given a module name, list all other modules that are added as dependencies.
+		// For example, in the Signal Android project, the video-app module depends on the video module and core-util module.
+		DefaultDependencyHandler dependencies = (DefaultDependencyHandler) rootProject.getDependencies();
 
 		return new DefaultDependenciesModel(
-						"ProjectToPluginMap::\n" + printMap(projectToPluginMap) + "\n\n"
+				"ProjectToPluginMap::\n" + printMap(projectToPluginMap) + "\n\n", projectToPluginMapOutput
 
 		);
 	}
@@ -101,7 +107,7 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 
 	String printMap(Map<Project, Set<String>> map) {
 		String s = map.entrySet().stream().map(e -> e.getKey().getName()).collect(Collectors.joining("\n"));
-		return map.entrySet().stream().map(e ->  e.getKey().getName() + "::\n" + String.join("\n", e.getValue())).collect(Collectors.joining("\n\n"));
+		return map.entrySet().stream().map(e -> e.getKey().getName() + "::\n" + String.join("\n", e.getValue())).collect(Collectors.joining("\n\n"));
 	}
 
 }
