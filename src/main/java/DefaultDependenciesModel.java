@@ -15,12 +15,12 @@ public class DefaultDependenciesModel implements Serializable {
 		this.projectToPluginMapping = projectToPluginMapping;
 	}
 
-	public String sayHello() {
-		return "Hello world! " + myDebugger;
+	public Map<String, Set<String>> projectPluginMap() {
+		return projectToPluginMapping;
 	}
 
-	private Map<String, Set<String>> getProjectToPluginMapping() {
-		return projectToPluginMapping;
+	private String sayHello() {
+		return "Hello World!" + myDebugger;
 	}
 
 
