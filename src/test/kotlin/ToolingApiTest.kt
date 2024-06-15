@@ -1,7 +1,11 @@
+import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.GradleTask
+import org.gradle.tooling.model.eclipse.EclipseProject
+import org.gradle.tooling.model.idea.IdeaProject
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.io.File
 
 class ToolingApiTest {
 
@@ -99,4 +103,17 @@ class ToolingApiTest {
         }
     }
 
+    @Nested
+    inner class FindPluginsForModule {
+        @Test
+        fun findPluginsForModule_signal() {
+            // Connect to the Gradle project
+            val findPluginsAppliedToModule = ToolingApi().findPluginsAppliedToModule(
+                System.getenv("HOME") + "/personal/Signal-Android/video/app",
+                "video-app"
+            )
+
+            println(findPluginsAppliedToModule)
+        }
+    }
 }
