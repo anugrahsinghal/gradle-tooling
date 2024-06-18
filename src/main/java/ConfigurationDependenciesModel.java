@@ -1,3 +1,5 @@
+import org.gradle.plugins.ide.internal.tooling.idea.DefaultIdeaProject;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -6,4 +8,6 @@ import java.util.Set;
  */
 public interface ConfigurationDependenciesModel {
     Map<String, Set<String>> projectPluginMap();
+    Set<String> pluginJarPaths();
+    String debug();
 }
