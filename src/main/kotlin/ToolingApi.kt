@@ -172,25 +172,18 @@ class ToolingApi {
     }
 
 
-    fun findModuleDependencies(projectLocation: String, moduleName: String): List<String> {
+    fun findModuleDependencies(projectLocation: String, moduleName: String): Collection<String>? {
         val connection: ProjectConnection = GradleConnector.newConnector()
             .forProjectDirectory(File(projectLocation))
             .connect()
 
-        val ideaProject = connection.use { it.getModel(IdeaProject::class.java) }
+        val customModelBuilder = connection.model(ConfigurationDependenciesModel::class.java)
+        customModelBuilder.withArguments("--init-script", copyInitScript().absolutePath)
 
-        val module = ideaProject.children.firstOrNull { it.name == moduleName }
-        if (module == null) {
-            throw RuntimeException("Module '$moduleName' does not exist")
-        }
+        // Fetch the custom model
+        val customModel: ConfigurationDependenciesModel = customModelBuilder.get()
 
-        for (dependency in module.dependencies) {
-            println(" * $dependency")
-        }
-
-
-
-        return emptyList()
+        return customModel.projectToInternalDependencies()[moduleName]?.toSet()
     }
 
     fun showDependencies(projectLocation: String, moduleName: String) {

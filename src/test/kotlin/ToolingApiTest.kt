@@ -111,17 +111,9 @@ class ToolingApiTest {
         fun moduleDependencies_signal_video_app() {
 
             val toolingApi = ToolingApi()
-            toolingApi.showDependencies(System.getenv("HOME") + "/personal/Signal-Android", "");
-            val signalAppConn = GradleConnector.newConnector()
-                .forProjectDirectory(File(System.getenv("HOME") + "/personal/Signal-Android"))
-                .connect()
+            var internalDependencies = toolingApi.findModuleDependencies(signalProject, "video-app")
 
-            val videoAppConn = GradleConnector.newConnector()
-                .forProjectDirectory(File(System.getenv("HOME") + "/personal/Signal-Android/video/app"))
-                .connect()
-
-            val ideaProjectModel = videoAppConn.getModel(IdeaProject::class.java)
-            val eclipseProjectModel: EclipseProject = videoAppConn.getModel(EclipseProject::class.java)
+            println(internalDependencies)
         }
     }
 
@@ -173,6 +165,6 @@ class ToolingApiTest {
 //        ToolingApi().getClassNamesFromJarFile(File("/Users/anugrah.singhal/.gradle/caches/modules-2/files-2.1/com.squareup.wire/wire-gradle-plugin/4.4.3/9ecfa0cf7b2a59d816909ff9edf1fd871f276ec4/wire-gradle-plugin-4.4.3.jar"))
 //            .forEach(System.out::println)
 
-        println(customModel.debug())
+        println(customModel)
     }
 }
