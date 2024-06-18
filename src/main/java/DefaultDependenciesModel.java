@@ -1,4 +1,3 @@
-import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
@@ -12,9 +11,9 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 	private final Map<String, Set<String>> projectToPluginMapping;
 	private final Set<String> pluginJarFiles;
 	private final Map<String, Set<String>> projectToInternalDependencies;
-	private final Map<String, Set<File>> projectToExternalDependencyPaths;
+	private final Map<String, Set<String>> projectToExternalDependencyPaths;
 
-	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles, Map<String, Set<String>> projectToInternalDependencies, Map<String, Set<File>> projectToExternalDependencyPaths) {
+	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles, Map<String, Set<String>> projectToInternalDependencies, Map<String, Set<String>> projectToExternalDependencyPaths) {
 		this.myDebugger = debugger;
 		this.projectToPluginMapping = projectToPluginMapping;
 		this.pluginJarFiles = pluginJarFiles;
@@ -40,7 +39,7 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 	}
 
 	@Override
-	public Map<String, Set<File>> projectToExternalDependencyPaths() {
+	public Map<String, Set<String>> projectToExternalDependencyPaths() {
 		return projectToExternalDependencyPaths;
 	}
 

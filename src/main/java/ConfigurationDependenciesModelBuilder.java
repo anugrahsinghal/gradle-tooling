@@ -119,7 +119,7 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 		// https://stackoverflow.com/questions/34641631/how-can-i-get-a-list-of-my-projects-dependencies-in-a-flattened-form-using-gradl
 		List<String> allClassTypes = new ArrayList<>();
 		Map<String, Set<String>> projectToInternalDependencies = new HashMap<>();
-		Map<String, Set<File>> projectToExternalDependencyPaths = new HashMap<>();
+		Map<String, Set<String>> projectToExternalDependencyPaths = new HashMap<>();
 		for (Project subProject : rootProject.getAllprojects()) {
 			//			configurations.forEach(configuration -> allClassTypes.add(subProject.getName() + "--" + configuration.getName()));
 			Configuration releaseRuntimeClasspath = subProject.getConfigurations().findByName("releaseRuntimeClasspath");
@@ -146,12 +146,10 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 				projectToInternalDependencies.put(subProject.getName(), internalDependencies);
 
 				Attribute<String> artifactType = Attribute.of("artifactType", String.class);
-				ArtifactCollection artifacts = resolvableDependencies.artifactView(ac -> {
-//					var attributeContainer = (DefaultConfiguration.ArtifactViewConfiguration) ac;
-//					attributeContainer
-					ac.getAttributes().attribute(artifactType, "jar");
-				}).getArtifacts();
-				Set<File> externalDependencyPaths = artifacts.getArtifacts().stream().map(it -> it.getFile()).collect(Collectors.toSet());
+				ArtifactCollection artifacts = resolvableDependencies
+						.artifactView(ac -> ac.getAttributes().attribute(artifactType, "jar"))
+						.getArtifacts();
+				Set<String> externalDependencyPaths = artifacts.getArtifacts().stream().map(it -> it.getFile().toPath().toAbsolutePath().toString() + "__" + it.getId().getDisplayName()).collect(Collectors.toSet());
 				projectToExternalDependencyPaths.put(subProject.getName(), externalDependencyPaths);
 
 
