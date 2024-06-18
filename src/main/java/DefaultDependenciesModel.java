@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
@@ -10,11 +11,15 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 	private final Object myDebugger;
 	private final Map<String, Set<String>> projectToPluginMapping;
 	private final Set<String> pluginJarFiles;
+	private final Map<String, Set<String>> projectToInternalDependencies;
+	private final Map<String, Set<File>> projectToExternalDependencyPaths;
 
-	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles) {
+	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles, Map<String, Set<String>> projectToInternalDependencies, Map<String, Set<File>> projectToExternalDependencyPaths) {
 		this.myDebugger = debugger;
 		this.projectToPluginMapping = projectToPluginMapping;
 		this.pluginJarFiles = pluginJarFiles;
+		this.projectToInternalDependencies = projectToInternalDependencies;
+		this.projectToExternalDependencyPaths = projectToExternalDependencyPaths;
 	}
 
 	public Map<String, Set<String>> projectPluginMap() {
@@ -29,5 +34,24 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 		return myDebugger.toString();
 	}
 
+	@Override
+	public Map<String, Set<String>> projectToInternalDependencies() {
+		return projectToInternalDependencies;
+	}
 
+	@Override
+	public Map<String, Set<File>> projectToExternalDependencyPaths() {
+		return projectToExternalDependencyPaths;
+	}
+
+	@Override
+	public String toString() {
+		return "DefaultDependenciesModel{" +
+				"\nmyDebugger=" + myDebugger +
+				", \nprojectToPluginMapping=" + projectToPluginMapping +
+				", \npluginJarFiles=" + pluginJarFiles +
+				", \nprojectToInternalDependencies=" + projectToInternalDependencies +
+				", \nprojectToExternalDependencyPaths=" + projectToExternalDependencyPaths +
+				'}';
+	}
 }
