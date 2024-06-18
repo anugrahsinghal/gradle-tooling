@@ -1,13 +1,21 @@
-import intellij.ExternalDependency;
-import intellij.resolver.GradleDependencyResolver;
+import intellij.DefaultModuleComponentIdentifier;
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ArtifactCollection;
+import org.gradle.api.artifacts.ArtifactView;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.PublishArtifact;
-import org.gradle.api.file.FileCollection;
+import org.gradle.api.artifacts.ResolvableDependencies;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.attributes.Attribute;
+import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.attributes.HasConfigurableAttributes;
+import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier;
 import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
+import org.gradle.api.internal.artifacts.configurations.DefaultConfiguration;
 import org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler;
+import org.gradle.api.internal.artifacts.result.DefaultResolvedDependencyResult;
+import org.gradle.api.internal.attributes.HierarchicalAttributeContainer;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.diagnostics.internal.ConfigurationDetails;
 import org.gradle.api.tasks.diagnostics.internal.ProjectDetails;
@@ -17,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,6 +70,7 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 //		IdeaModelBuilder ideaModelBuilder = new IdeaModelBuilder(null);
 //
 //		DefaultIdeaProject defaultIdeaProject = ideaModelBuilder.buildAll(modelName, rootProject);
+		/*
 		List<String> output = new ArrayList<>();
 		for (Project project : rootProject.getAllprojects()) {
 			output.add("-------" + project.getName() + "-------");
@@ -104,12 +114,57 @@ public class ConfigurationDependenciesModelBuilder implements ToolingModelBuilde
 					.append("\nMAP_STUFF::" + stringCollectionMap + "\n")
 					.append("\n\n");
 		}
+*/
+
+		// https://stackoverflow.com/questions/34641631/how-can-i-get-a-list-of-my-projects-dependencies-in-a-flattened-form-using-gradl
+		List<String> allClassTypes = new ArrayList<>();
+		Map<String, Set<String>> projectToInternalDependencies = new HashMap<>();
+		Map<String, Set<File>> projectToExternalDependencyPaths = new HashMap<>();
+		for (Project subProject : rootProject.getAllprojects()) {
+			//			configurations.forEach(configuration -> allClassTypes.add(subProject.getName() + "--" + configuration.getName()));
+			Configuration releaseRuntimeClasspath = subProject.getConfigurations().findByName("releaseRuntimeClasspath");
+			if (releaseRuntimeClasspath != null) {
+//				allClassTypes.add("-------" + subProject.getName() + "--" + releaseRuntimeClasspath);
+				ResolvableDependencies resolvableDependencies = releaseRuntimeClasspath.getIncoming();
+
+				Set<DefaultResolvedDependencyResult> dependencyResults = resolvableDependencies.getResolutionResult().getAllDependencies()
+						.stream()
+						.filter(DefaultResolvedDependencyResult.class::isInstance)
+						.map(DefaultResolvedDependencyResult.class::cast).collect(Collectors.toSet());
+//				Map<? extends Class<? extends ComponentIdentifier>, Set<ComponentIdentifier>> collect = dependencyResults
+//						.stream()
+//						.map(it -> it.getSelected().getId())
+//						.collect(Collectors.groupingBy(ComponentIdentifier::getClass, Collectors.toSet()));
+				Set<String> internalDependencies = dependencyResults
+						.stream()
+						.map(it -> it.getSelected().getId())
+						.filter(DefaultProjectComponentIdentifier.class::isInstance)
+						.map(DefaultProjectComponentIdentifier.class::cast)
+						// .map(DefaultProjectComponentIdentifier.class::cast) // for external dependency without path
+						.map(DefaultProjectComponentIdentifier::getProjectName)
+						.collect(Collectors.toSet());
+				projectToInternalDependencies.put(subProject.getName(), internalDependencies);
+
+				Attribute<String> artifactType = Attribute.of("artifactType", String.class);
+				ArtifactCollection artifacts = resolvableDependencies.artifactView(ac -> {
+//					var attributeContainer = (DefaultConfiguration.ArtifactViewConfiguration) ac;
+//					attributeContainer
+					ac.getAttributes().attribute(artifactType, "jar");
+				}).getArtifacts();
+				Set<File> externalDependencyPaths = artifacts.getArtifacts().stream().map(it -> it.getFile()).collect(Collectors.toSet());
+				projectToExternalDependencyPaths.put(subProject.getName(), externalDependencyPaths);
+
+
+			}
+		}
 
 		return new DefaultDependenciesModel(
-				output2,
+				String.join("\n", allClassTypes),
 //				"ProjectToPluginMap::\n" + String.join("\n", output) + "\n\n" + projectNameAndPathConfigurationDetailsProjectsWithConfigurations + "\n\n",
 				projectToPluginMapOutput,
-				allPluginsJarPaths
+				allPluginsJarPaths,
+				projectToInternalDependencies,
+				projectToExternalDependencyPaths
 		);
 	}
 
