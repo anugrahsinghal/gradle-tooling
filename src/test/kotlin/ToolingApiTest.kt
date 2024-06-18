@@ -1,4 +1,5 @@
 import org.gradle.tooling.GradleConnector
+import org.gradle.tooling.ModelBuilder
 import org.gradle.tooling.model.GradleProject
 import org.gradle.tooling.model.GradleTask
 import org.gradle.tooling.model.eclipse.EclipseProject
@@ -104,6 +105,39 @@ class ToolingApiTest {
     }
 
     @Nested
+    inner class ModuleDependencies {
+
+        @Test
+        fun moduleDependencies_signal_video_app() {
+
+            val toolingApi = ToolingApi()
+            toolingApi.showDependencies(System.getenv("HOME") + "/personal/Signal-Android", "");
+            val signalAppConn = GradleConnector.newConnector()
+                .forProjectDirectory(File(System.getenv("HOME") + "/personal/Signal-Android"))
+                .connect()
+
+            val videoAppConn = GradleConnector.newConnector()
+                .forProjectDirectory(File(System.getenv("HOME") + "/personal/Signal-Android/video/app"))
+                .connect()
+
+            val ideaProjectModel = videoAppConn.getModel(IdeaProject::class.java)
+            val eclipseProjectModel: EclipseProject = videoAppConn.getModel(EclipseProject::class.java)
+        }
+    }
+
+    @Nested
+    inner class FindArtifactForClassName {
+        @Test
+        fun findArtifactForClassName_signal() {
+            // Connect to the Gradle project
+            ToolingApi().findArtifactForClassName(
+                System.getenv("HOME") + "/personal/Signal-Android",
+                "androidx.compose.ui.Modifier"
+            )
+        }
+    }
+
+    @Nested
     inner class FindPluginsForModule {
         @Test
         fun findPluginsForModule_signal() {
@@ -115,5 +149,30 @@ class ToolingApiTest {
 
             println(findPluginsAppliedToModule)
         }
+    }
+
+    @Test
+    fun myExp() {
+        val connection = GradleConnector.newConnector()
+            .forProjectDirectory(File(signalProject))
+            .connect()
+
+        val customModelBuilder = connection.model(ConfigurationDependenciesModel::class.java)
+        val withArguments: ModelBuilder<ConfigurationDependenciesModel> =
+            customModelBuilder.withArguments("--init-script", ToolingApi().copyInitScript().absolutePath)
+//        customModelBuilder.withArguments("-Dorg.gradle.debug=true")
+//        customModelBuilder.withArguments("--no-daemon")
+
+        val customModel: ConfigurationDependenciesModel = withArguments.get()
+
+//        customModel.pluginJarPaths().forEach(System.out::println)
+
+        println()
+        println()
+
+//        ToolingApi().getClassNamesFromJarFile(File("/Users/anugrah.singhal/.gradle/caches/modules-2/files-2.1/com.squareup.wire/wire-gradle-plugin/4.4.3/9ecfa0cf7b2a59d816909ff9edf1fd871f276ec4/wire-gradle-plugin-4.4.3.jar"))
+//            .forEach(System.out::println)
+
+        println(customModel.debug())
     }
 }
