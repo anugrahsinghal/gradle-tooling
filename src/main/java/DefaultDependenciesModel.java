@@ -1,5 +1,3 @@
-import org.gradle.plugins.ide.internal.tooling.idea.DefaultIdeaProject;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
@@ -13,7 +11,7 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 	private final Map<String, Set<String>> projectToPluginMapping;
 	private final Set<String> pluginJarFiles;
 
-	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles, DefaultIdeaProject ideaProject) {
+	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles) {
 		this.myDebugger = debugger;
 		this.projectToPluginMapping = projectToPluginMapping;
 		this.pluginJarFiles = pluginJarFiles;
