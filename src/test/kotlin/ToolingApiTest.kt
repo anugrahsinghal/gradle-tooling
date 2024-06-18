@@ -122,10 +122,12 @@ class ToolingApiTest {
         @Test
         fun findArtifactForClassName_signal() {
             // Connect to the Gradle project
-            ToolingApi().findArtifactForClassName(
-                System.getenv("HOME") + "/personal/Signal-Android",
+            var toolingApi = ToolingApi()
+            var findArtifactForClassName = toolingApi.findArtifactForClassName(
+                signalProject,
                 "androidx.compose.ui.Modifier"
             )
+            println(findArtifactForClassName)
         }
     }
 

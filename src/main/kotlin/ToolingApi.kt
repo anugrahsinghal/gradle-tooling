@@ -116,7 +116,37 @@ class ToolingApi {
         return File(codeSource.location.toURI())
     }
 
-    fun findArtifactForClassName(projectLocation: String, className: String) {
+    fun findArtifactForClassName(projectLocation: String, className: String): String {
+        val connection: ProjectConnection = GradleConnector.newConnector()
+            .forProjectDirectory(File(projectLocation))
+            .connect()
+
+        val customModelBuilder = connection.model(ConfigurationDependenciesModel::class.java)
+        customModelBuilder.withArguments("--init-script", copyInitScript().absolutePath)
+
+        // Fetch the custom model
+        val customModel: ConfigurationDependenciesModel = customModelBuilder.get()
+
+        val values = customModel.projectToExternalDependencyPaths().values
+        for (dependency in values.flatten()) {
+
+            try {
+                val filePath = dependency.split("__")[0]
+                val classNamesFromJarFile = getClassNamesFromJarFile(File(filePath))
+                if (classNamesFromJarFile.contains(className)) {
+                    return (dependency.split("__")[1]) // dependency co-ordinates
+                }
+            } catch (e: Exception) {
+                println(e)
+            }
+
+        }
+
+        return "NOT_FOUND"
+
+    }
+
+    fun _findArtifactForClassName(projectLocation: String, className: String) {
 
         val connection = GradleConnector.newConnector()
             .forProjectDirectory(File(projectLocation))
