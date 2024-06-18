@@ -9,24 +9,18 @@ import java.util.Set;
 public class DefaultDependenciesModel implements Serializable, ConfigurationDependenciesModel {
 	private final Object myDebugger;
 	private final Map<String, Set<String>> projectToPluginMapping;
-	private final Set<String> pluginJarFiles;
 	private final Map<String, Set<String>> projectToInternalDependencies;
 	private final Map<String, Set<String>> projectToExternalDependencyPaths;
 
-	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Set<String> pluginJarFiles, Map<String, Set<String>> projectToInternalDependencies, Map<String, Set<String>> projectToExternalDependencyPaths) {
+	public DefaultDependenciesModel(Object debugger, Map<String, Set<String>> projectToPluginMapping, Map<String, Set<String>> projectToInternalDependencies, Map<String, Set<String>> projectToExternalDependencyPaths) {
 		this.myDebugger = debugger;
 		this.projectToPluginMapping = projectToPluginMapping;
-		this.pluginJarFiles = pluginJarFiles;
 		this.projectToInternalDependencies = projectToInternalDependencies;
 		this.projectToExternalDependencyPaths = projectToExternalDependencyPaths;
 	}
 
 	public Map<String, Set<String>> projectPluginMap() {
 		return projectToPluginMapping;
-	}
-
-	public Set<String> pluginJarPaths() {
-		return pluginJarFiles;
 	}
 
 	public String debug() {
@@ -48,7 +42,6 @@ public class DefaultDependenciesModel implements Serializable, ConfigurationDepe
 		return "DefaultDependenciesModel{" +
 				"\nmyDebugger=" + myDebugger +
 				", \nprojectToPluginMapping=" + projectToPluginMapping +
-				", \npluginJarFiles=" + pluginJarFiles +
 				", \nprojectToInternalDependencies=" + projectToInternalDependencies +
 				", \nprojectToExternalDependencyPaths=" + projectToExternalDependencyPaths +
 				'}';
